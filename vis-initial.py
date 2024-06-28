@@ -22,6 +22,3 @@ sns.heatmap(correlation_matrix, annot=True)
 plt.title('Heatmap of Variable Correlations')
 plt.show()
 
-df['Date'].value_counts().plot(kind='hist')
-plt.title('Histogram of Date Frequencies')
-plt.show()

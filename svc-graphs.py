@@ -1,10 +1,13 @@
+# svc-graphs.py
+# Graphs the data points and look for SVC
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVR, SVC
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, r2_score, make_scorer
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.decomposition import PCA
 
 # Load the data
 df = pd.read_csv('merged.csv')
@@ -28,9 +31,7 @@ X_test_scaled = scaler.transform(X_test)
 param_grid = {
     'kernel': ['linear', 'rbf', 'poly'],
     'C': [0.1, 1, 10, 100],
-    # 'gamma': [0.1, 1, 10],  # Reduced set of gamma values
-    # 'gamma': [0.1, 1],  # Reduced set of gamma values
-    'gamma': ['scale', 'auto'],  # auto tune, faster
+    'gamma': ['scale', 'auto'],
     'epsilon': [0.1, 0.01, 0.001],
     'coef0': [0, 1, 10],
     'degree': [2, 3, 4]  # Only relevant for polynomial kernel
@@ -61,18 +62,15 @@ def plot_decision_boundary(model, X, y, title):
                          np.arange(y_min, y_max, h))
     Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
-    # plt.contourf(xx, yy, Z, alpha=0.8)
     plt.contourf(xx, yy, Z, alpha=0.8, cmap=plt.cm.coolwarm)  # Background colors
     plt.contour(xx, yy, Z, colors='k', linewidths=0.5)  # Contour lines
     plt.scatter(X[:, 0], X[:, 1], c=y, edgecolors='k', marker='o')
-    plt.xlabel('DataSet')
-    plt.ylabel('TotalMinutesAsleep')
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
     plt.title(title)
     plt.show()
 
 # For visualization, we need 2D data, we can use PCA to reduce the dimensionality for plotting
-from sklearn.decomposition import PCA
-
 pca = PCA(n_components=2)
 X_train_pca = pca.fit_transform(X_train_scaled)
 X_test_pca = pca.transform(X_test_scaled)
@@ -90,6 +88,13 @@ rbf_svc.fit(X_train_pca, y_train)
 
 # Plot nonlinear SVC decision boundary
 plot_decision_boundary(rbf_svc, X_train_pca, y_train, 'Nonlinear SVC (RBF) Decision Boundary')
+
+# Train polynomial SVC for visualization
+poly_svc = SVC(kernel='poly', degree=3)  # You can change the degree as needed
+poly_svc.fit(X_train_pca, y_train)
+
+# Plot polynomial SVC decision boundary
+plot_decision_boundary(poly_svc, X_train_pca, y_train, 'Polynomial SVC Decision Boundary (Degree 3)')
 
 # Nonlinear SVC with Cross-Validation Scores
 # Perform Grid Search Cross-Validation for Nonlinear SVC (e.g., RBF kernel)
